@@ -1,0 +1,125 @@
+
+import csv
+import statistics
+from fpdf import FPDF
+
+# Function to read data from a CSV file
+def read_csv_data(file_path):
+    with open(file_path, mode='r') as file:
+        csv_reader = csv.DictReader(file)
+        data = [row for row in csv_reader]
+    return data
+
+# Function to analyze numerical columns in the data
+def analyze_data(data):
+    analysis = {}
+    numerical_columns = [col for col in data[0].keys() if all(row[col].replace('.', '', 1).isdigit() for row in data)]
+    
+    for col in numerical_columns:
+        values = [float(row[col]) for row in data]
+        analysis[col] = {
+            'mean': statistics.mean(values),
+            'min': min(values),
+            'max': max(values),
+            'median': statistics.median(values),
+            'stdev': statistics.stdev(values) if len(values) > 1 else 0
+        }
+    return analysis
+
+# Function to generate a PDF report
+def generate_pdf_report(analysis, file_path):
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.add_page()
+    
+    pdf.set_font("Arial", "B", 16)
+    pdf.cell(200, 10, "Data Analysis Report", ln=True, align='C')
+    
+    pdf.ln(10)  # Add a line break
+    
+    for column, stats in analysis.items():
+        pdf.set_font("Arial", "B", 12)
+        pdf.cell(200, 10, f"Column: {column}", ln=True)
+        
+        pdf.set_font("Arial", "", 12)
+        for stat, value in stats.items():
+            pdf.cell(200, 10, f"{stat.capitalize()}: {value:.2f}", ln=True)
+        
+        pdf.ln(5)  # Add some space before the next column
+
+    pdf.output(file_path)
+
+# Main function to read, analyze and generate report
+def main():
+    csv_file = 'data.csv'  # Replace with your CSV file path
+    pdf_file = 'report.pdf'  # Output PDF file
+    
+    data = read_csv_data(csv_file)
+    if data:
+        analysis = analyze_data(data)
+        generate_pdf_report(analysis, pdf_file)
+        print(f"Report generated: {pdf_file}")
+    else:
+        print("No data found in the CSV file.")
+
+if __name__ == "__main__":
+    main()
+
+
+# using FPDF library
+
+from fpdf import FPDF
+import pandas as pd
+
+def generate_pdf_report(input_file, output_file):
+    """
+    Reads data from a file, analyzes it, and generates a formatted PDF report.
+
+    Args:
+        input_file (str): Path to the input file (e.g., CSV, Excel).
+        output_file (str): Path to the output PDF file.
+
+    """
+
+    # 1. Read data from the input file
+    try:
+        df = pd.read_csv(input_file)  # Adjust for different file types (e.g., pd.read_excel())
+    except FileNotFoundError:
+        print(f"Error: Input file '{input_file}' not found.")
+        return
+
+    # 2. Data Analysis (Replace with your specific analysis)
+    # Example: Calculate summary statistics
+    summary_stats = df.describe()
+
+    # 3. Create an FPDF object
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", "B", 16)
+    pdf.cell(w=0, h=10, txt="Report Summary", ln=1, align="C")
+    pdf.set_font("Arial", "", 12)
+
+    # 4. Add data to the PDF
+    pdf.cell(w=0, h=10, txt=f"File: {input_file}", ln=1)
+    pdf.cell(w=0, h=10, txt="Summary Statistics:", ln=1)
+
+    # 5. Add summary statistics table
+    columns = summary_stats.columns
+    for column in columns:
+        pdf.cell(w=0, h=10, txt=f"{column}:", ln=1)
+        for stat, value in summary_stats[column].items():
+            pdf.cell(w=0, h=10, txt=f"  - {stat}: {value}", ln=1)
+
+    # 6. Add more sections to the report (optional)
+    #   - Charts/Graphs (using libraries like matplotlib and Pillow)
+    #   - Custom tables
+    #   - Textual observations
+
+    # 7. Save the PDF report
+    pdf.output(output_file, "F")
+    print(f"Report generated successfully: {output_file}")
+
+if __name__ == "__main__":
+    input_filename = "data.csv"  # Replace with your input file path
+    output_filename = "report.pdf"
+    generate_pdf_report(input_filename, output_filename)
